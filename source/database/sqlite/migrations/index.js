@@ -1,0 +1,16 @@
+const sqliteConnection = require("../../sqlite");
+const createUsers = require("./create.users");
+
+
+async function migrationsRun() {
+  const schemas = [
+    // createUsers
+  ].join('');
+
+  await sqliteConnection()
+    .then(db => db.exec(schemas))
+    .catch(error => console.error(error));
+
+}
+
+module.exports = migrationsRun;
