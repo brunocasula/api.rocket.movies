@@ -37,16 +37,17 @@ class UsersController {
   }
 
   async delete(request, response) {
-    const { id } = request.params;
+    // const { id } = request.params;
+    const user_id = request.user.id;
     console.log(id);
 
-    await knex("users").where({ id }).delete();
+    await knex("users").where({ user_id }).delete();
 
     return response.status(200).json();
   }
 
   async update(request, response) {
-    const { id } = request.params;
+    const user_id = request.user.id;
     const { name, email, password, old_password } = request.body;
 
     const database = await sqliteConnection();
@@ -54,7 +55,7 @@ class UsersController {
       SELECT * 
       FROM users
       WHERE id = (?)`,
-      [id]
+      [user_id]
     );
 
     if (!user) {
@@ -69,7 +70,7 @@ class UsersController {
     );
 
     if (userWithUpdatedEmail && userWithUpdatedEmail.id !== user.id) {
-      console.log(userWithUpdatedEmail.id, id)
+      console.log(userWithUpdatedEmail.id, user_id)
       throw new AppError(`Este e-mail já está em uso!`);
     }
 
@@ -100,15 +101,14 @@ class UsersController {
         updated_at = DATETIME(CURRENT_TIMESTAMP, 'localtime')
       WHERE 
 	      id = :id`,
-      [user.name, user.email, user.password, id]
+      [user.name, user.email, user.password, user_id]
     );
 
-    response.status(200).json();
+    return response.status(200).json();
   }
 
   async index(request, response) {
     const { id, name } = request.query;
-
     let users;
 
     if (id) {
@@ -135,11 +135,11 @@ class UsersController {
   }
 
   async show(request, response) {
-    const { id } = request.params
+    const user_id = request.user.id;
 
-    const users = await knex("users").select(["id", "name", "email"]).where({ id }).first();
-    const movieNotes = await knex("movie_notes").select(["id", "title", "description"]).where({ user_id: id });
-    const movieTags = await knex("movie_tags").select(["id", "note_id", "name"]).where({ user_id: id }).orderBy("name");
+    const users = await knex("users").select(["id", "name", "email"]).where({ id: user_id }).first();
+    const movieNotes = await knex("movie_notes").select(["id", "title", "description"]).where({ user_id });
+    const movieTags = await knex("movie_tags").select(["id", "note_id", "name"]).where({ user_id }).orderBy("name");
 
     const notesMap = movieNotes.map(note => {
       const tagsFilter = movieTags.filter(tag => tag.note_id === note.id)

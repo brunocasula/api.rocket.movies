@@ -5,7 +5,8 @@ const AppError = require("../utils/app.error");
 class MovieNotesController {
 
   async create(request, response) {
-    const { title, description, rating, user_id } = request.body;
+    const user_id = request.user.id;
+    const { title, description, rating, tags } = request.body;
 
     const database = await sqliteConnection();
     const checkExists = await database.get(`
@@ -24,20 +25,42 @@ class MovieNotesController {
       throw new AppError("A nota do do filme deve corresponder ao valor de 1 a 5!")
     }
 
-    await database.run(`
-      INSERT INTO movie_notes 
-	      (title, description, rating, user_id)
-      VALUES
-	      ((?), (?), (?), (?))`,
-      [title, description, rating, user_id]
-    );
+    // await database.run(`
+    //   INSERT INTO movie_notes 
+    //     (title, description, rating, user_id)
+    //   VALUES
+    //     ((?), (?), (?), (?))`,
+    //   [title, description, rating, user_id]
+    // );
+
+    const [notesInsert] = await knex("movie_notes").insert({
+      title,
+      description,
+      rating,
+      user_id
+    });
+
+    console.log(tags)
+
+    if (tags.length > 0) {
+
+      const tagsInsert = tags.map(name => {
+        return {
+          note_id: notesInsert,
+          name,
+          user_id
+        }
+      })
+
+      await knex("movie_tags").insert(tagsInsert);
+    }
 
     return response.status(201).json();
 
   }
 
   async delete(request, response) {
-    const { id } = request.params;
+    const id = request.params;
 
     await knex("movie_notes").where({ id }).delete();
 
@@ -82,41 +105,64 @@ class MovieNotesController {
   }
 
   async index(request, response) {
+    const user_id = request.user.id;
+
     const { id, title } = request.query;
 
     let notes;
 
     if (id) {
+      console.log("pesquisa por id", id);
       notes = await knex("movie_notes")
+        .select(["movie_notes.*", "users.name AS user_name"])
+        .innerJoin("users", "movie_notes.user_id", "users.id")
         .where({ id });
     }
-    else {
+    else if (title) {
       notes = await knex("movie_notes")
+        .select(["movie_notes.*", "users.name AS user_name"])
+        .innerJoin("users", "movie_notes.user_id", "users.id")
         .whereLike("title", `%${title}%`)
         .orderBy("title");
     }
+    else {
+      notes = await knex("movie_notes")
+        .select(["movie_notes.*", "users.name AS user_name"])
+        .innerJoin("users", "movie_notes.user_id", "users.id")
+        // .innerJoin("movie_tags", "movie_notes.id", "movie_tags.note_id")
+        .orderBy("title");
+    }
 
-    const notesMap = notes.map(note => {
+    const userTags = await knex("movie_tags")
+      .where({ user_id })
+
+    const notesWithTags = notes.map(note => {
+      const noteTags = userTags.filter(tag => tag.note_id === note.id)
 
       return {
-        ...note
+        ...note,
+        tags: noteTags
       }
 
     })
 
-    return response.json(notesMap);
+    return response.json(notesWithTags);
   }
 
   async show(request, response) {
     const { id } = request.params
     console.log('show');
 
-    const movieNotes = await knex("movie_notes").where({ id }).first();
+    const movieNotes = await knex("movie_notes")
+      .select(["movie_notes.*", "users.name AS user_name"])
+      .innerJoin("users", "movie_notes.user_id", "users.id")
+      .where("movie_notes.id", id).first();
+
     const movieTags = await knex("movie_tags").where({ note_id: id }).orderBy("name");
 
     return response.json({
       ...movieNotes,
-      movieTags
+      tags: movieTags
     })
   }
 

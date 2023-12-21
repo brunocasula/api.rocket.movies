@@ -4,12 +4,16 @@ const migrationsRun = require("./database/sqlite/migrations")
 const AppError = require("./utils/app.error");
 const express = require("express");
 const routes = require("./routes/");
+const updadConfig = require("./configs/upload");
+const cors = require("cors");
 
 const app = express();
 const port = 3333;
 
 migrationsRun();
 
+app.use("/files", express.static(updadConfig.UPLOADS_FOLDER));
+app.use(cors());
 app.use(express.json());
 app.use(routes);
 

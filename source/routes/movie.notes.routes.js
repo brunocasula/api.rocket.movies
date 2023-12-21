@@ -1,10 +1,11 @@
 const { Router } = require("express");
-const MovieNotesController = require("../controllers/movie.notes.controllers");
+const MovieNotesController = require("../controllers/movie.notes.controller");
 
 const movieNotesRoutes = Router();
 const movieNotesController = new MovieNotesController();
 
 /* middleware */
+const ensureAuthenticated = require("../middleware/ensureAuthenticated");
 
 function myMiddleware(request, response, next) {
   console.log("movie.notes middleware");
@@ -17,6 +18,8 @@ function myMiddleware(request, response, next) {
 
   next();
 }
+
+movieNotesRoutes.use(ensureAuthenticated);
 
 movieNotesRoutes.post("/", myMiddleware, movieNotesController.create);
 movieNotesRoutes.get("/", myMiddleware, movieNotesController.index);
