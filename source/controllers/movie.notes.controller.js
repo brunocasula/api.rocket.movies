@@ -122,14 +122,19 @@ class MovieNotesController {
       notes = await knex("movie_notes")
         .select(["movie_notes.*", "users.name AS user_name"])
         .innerJoin("users", "movie_notes.user_id", "users.id")
-        .whereLike("title", `%${title}%`)
+        .where("movie_notes.user_id", user_id)
+        .andWhereLike("title", `%${title}%`)
         .orderBy("title");
     }
     else {
+      console.log("User ID: ", user_id);
+      console.log("Aqui");
       notes = await knex("movie_notes")
         .select(["movie_notes.*", "users.name AS user_name"])
         .innerJoin("users", "movie_notes.user_id", "users.id")
         // .innerJoin("movie_tags", "movie_notes.id", "movie_tags.note_id")
+        //.where({ user_id })
+        .where("movie_notes.user_id", user_id)
         .orderBy("title");
     }
 
