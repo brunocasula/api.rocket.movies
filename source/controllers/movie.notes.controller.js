@@ -112,7 +112,6 @@ class MovieNotesController {
     let notes;
 
     if (id) {
-      console.log("pesquisa por id", id);
       notes = await knex("movie_notes")
         .select(["movie_notes.*", "users.name AS user_name"])
         .innerJoin("users", "movie_notes.user_id", "users.id")
@@ -127,8 +126,6 @@ class MovieNotesController {
         .orderBy("title");
     }
     else {
-      console.log("User ID: ", user_id);
-      console.log("Aqui");
       notes = await knex("movie_notes")
         .select(["movie_notes.*", "users.name AS user_name"])
         .innerJoin("users", "movie_notes.user_id", "users.id")
