@@ -1,4 +1,5 @@
 require("express-async-errors");
+require("dotenv/config");
 
 const migrationsRun = require("./database/sqlite/migrations")
 const AppError = require("./utils/app.error");
@@ -8,7 +9,7 @@ const updadConfig = require("./configs/upload");
 const cors = require("cors");
 
 const app = express();
-const port = 3333;
+const port = process.env.PORT || 3333;
 
 migrationsRun();
 
